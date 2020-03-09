@@ -7,7 +7,7 @@ from PyQt5.QtMultimedia import (QAbstractVideoBuffer, QMediaContent,
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import (QApplication, QAction, QComboBox, QDialog, QFileDialog,
         QFormLayout, QMenuBar, QHBoxLayout, QLabel, QListView, QMessageBox, QPushButton,
-        QSizePolicy, QSlider, QSpinBox,  QStyle, QVBoxLayout, QWidget, QGridLayout)
+        QSizePolicy, QSlider, QSpinBox,  QStyle, QVBoxLayout, QWidget, QGridLayout, QLineEdit)
 import sys
 import cv2
 
@@ -38,89 +38,87 @@ class VideoWidget(QVideoWidget):
         self.setFullScreen(not self.isFullScreen())
         event.accept()
 
-class ShowVideo(QObject):
+# class ShowVideo(QObject):
+    # #initiating the built in camera
+    # # camera_port = 0
+    # camera = cv2.VideoCapture("/home/rohith/Documents/annotation_tool/Annotation_tool/test.mp4")
+    # VideoSignal = pyqtSignal(QImage)
  
-    #initiating the built in camera
-    # camera_port = 0
-    camera = cv2.VideoCapture("C:/Users/srohi/Downloads/test.mp4")
-    VideoSignal = pyqtSignal(QImage)
- 
-    def __init__(self, parent = None):
-        super(ShowVideo, self).__init__(parent)
-        print("working")
+    # def __init__(self, parent = None):
+    #     super(ShowVideo, self).__init__(parent)
+    #     print("working")
         
-    @pyqtSlot()
-    def startVideo(self):
-        print("running????")
-        run_video = True
-        while run_video:
-            ret, image = self.camera.read()
+    # @pyqtSlot()
+    # def startVideo(self):
+    #     print("running????")
+    #     run_video = True
+    #     while run_video:
+    #         ret, image = self.camera.read()
+    #         image = cv2.resize(image,(1365,753),fx=0,fy=0, interpolation = cv2.INTER_CUBIC)
+    #         color_swapped_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)           
+    #         height, width, _ = color_swapped_image.shape
  
-            color_swapped_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    #         qt_image = QImage(color_swapped_image.data,
+    #                                 width,
+    #                                 height,
+    #                                 color_swapped_image.strides[0],
+    #                                 QImage.Format_RGB888)
  
-            height, width, _ = color_swapped_image.shape
- 
-            qt_image = QImage(color_swapped_image.data,
-                                    width,
-                                    height,
-                                    color_swapped_image.strides[0],
-                                    QImage.Format_RGB888)
- 
-            self.VideoSignal.emit(qt_image)
+    #         self.VideoSignal.emit(qt_image)
 
-class ImageViewer(QWidget):
-    def __init__(self, parent = None):
-        super(ImageViewer, self).__init__(parent)
-        self.image = QImage()
-        self.setAttribute(Qt.WA_OpaquePaintEvent)
- 
- 
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.drawImage(0,0, self.image)
-        self.image = QImage()
- 
-    def initUI(self):
-        self.setWindowTitle('Test')
- 
-    @pyqtSlot(QImage)
-    def setImage(self, image):
-        if image.isNull():
-            print("Viewer Dropped frame!")
- 
-        self.image = image
-        # if image.size() != self.size():
-        #     self.setFixedSize(image.size())
-        self.update()
+# class ImageViewer(QWidget):
+    # def __init__(self, parent = None):
+    #     super(ImageViewer, self).__init__(parent)
+    #     self.image = QImage()
+    #     self.setAttribute(Qt.WA_OpaquePaintEvent)
+    # def paintEvent(self, event):
+    #     painter = QPainter(self)
+    #     painter.drawImage(0,0, self.image)
+    #     self.image = QImage()
+    # def initUI(self):
+    #     self.setWindowTitle('Test')
+    # def mouseDoubleClickEvent(self, event):
+    #     self.image.resize(2000,970)
+    #     event.accept()
+    # @pyqtSlot(QImage)
+    # def setImage(self, image):
+    #     if image.isNull():
+    #         print("Viewer Dropped frame!")
+    #     self.image = image
+    #     # if image.size() != self.size():
+    #     #     self.setFixedSize(image.size())
+    #     self.update()
 
 class Main_win(QWidget):
     fullScreenChanged = pyqtSignal(bool)
     def __init__(self, parent=None):
         super(Main_win, self).__init__(parent)
+        self.frame_mvm = 100/6
         self.resize(2000,970)
         layout  = QGridLayout()
     #------------------CV-to-media----------------#
-        self.thread = QThread()
-        self.thread.start()
-        self.vid = ShowVideo()
-        self.vid.moveToThread(self.thread)
-        image_viewer = ImageViewer()      
-        self.vid.VideoSignal.connect(image_viewer.setImage)
+        # self.thread = QThread()
+        # self.thread.start()
+        # self.vid = ShowVideo()
+        # self.vid.moveToThread(self.thread)
+        # image_viewer = ImageViewer()      
+        # self.vid.VideoSignal.connect(image_viewer.setImage)
     #------------------MediaPlayer----------------#
         self.player = QMediaPlayer()
         self.videoWidget = VideoWidget()
         self.player.setVideoOutput(self.videoWidget)
-        # layout.addWidget(self.videoWidget, 1, 1, 10, 7)
+        layout.addWidget(self.videoWidget, 1, 1, 10, 3)
         self.playButton = QPushButton()
         self.playButton.setEnabled(False)
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.playButton.clicked.connect(self.play)
         self.player.stateChanged.connect(self.mediaStateChanged)
-        layout.addWidget(self.playButton, 11,1)
-
+        self.playtime = QLineEdit()
+        self.playtime.setEnabled(False)
         self.positionSlider = QSlider(Qt.Horizontal)
         self.positionSlider.setRange(0, 0)
-        layout.addWidget(self.positionSlider, 11,2)
+        self.frameSlider = QSlider(Qt.Horizontal)
+        self.frameSlider.setRange(0, 0)
         self.positionSlider.sliderMoved.connect(self.setPosition)
         self.player.stateChanged.connect(self.mediaStateChanged)
         self.player.positionChanged.connect(self.positionChanged)
@@ -129,14 +127,26 @@ class Main_win(QWidget):
         self.frameSlider = QSlider(Qt.Horizontal)
         self.frameSlider.setRange(0, 0)
         testbtn = QPushButton()
-        layout.addWidget(testbtn, 12,1)
         testbtn.clicked.connect(self.test1)
         testbtn2 = QPushButton()
-        testbtn2.setText("working")
-        testbtn2.clicked.connect(self.vid.startVideo)
-        layout.addWidget(image_viewer, 1,1,10,7)
-        layout.addWidget(testbtn2,12, 7)
-   
+        testbtn2.setText('>')
+        testbtn.setText('<')
+        testbtn2.clicked.connect(self.test2)
+        
+        # layout.addWidget(image_viewer, 1,1,12,2)
+        layout.addWidget(self.playButton, 11,1)
+        layout.addWidget(self.playtime, 11, 3)
+        layout.addWidget(self.positionSlider, 11,2)
+        layout.addWidget(self.frameSlider, 12,2)
+        layout.addWidget(testbtn, 12,1)
+        layout.addWidget(testbtn2,12, 3)
+        # self.player.positionChanged.connect(self.on_positionChanged)
+
+    #----------------------------resize widgets-----------------#
+        self.videoWidget.setFixedWidth(1180)
+        self.playtime.setFixedWidth(50)
+        testbtn2.setFixedWidth(50)
+        testbtn2.setFixedHeight(50)
     #------------------Expressions----------------#
         self.Anger = QPushButton("Anger")
         layout.addWidget(self.Anger, 1, 0)
@@ -156,7 +166,7 @@ class Main_win(QWidget):
         layout.addWidget(self.Embarassment, 8, 0)
         self.Contempt = QPushButton("Contempt")
         layout.addWidget(self.Contempt, 9, 0)
-    #-------------------------FACS---------------------------------------#
+    #-------------------------FACS-------------------------#
         self.lbl1 = QLabel()
         self.lbl1.setText("1")
         layout.addWidget(self.lbl1, 2, 12)
@@ -276,7 +286,7 @@ class Main_win(QWidget):
         layout.addWidget(self.lbl39, 14,16)
         
         #---------FAC LAbels------------------#
-    #-----------------------------------Menu Bar-----------------------------------------------#
+    #-----------------------------------Menu Bar--------------------#
         openAction = QAction(QIcon('open.png'), '&Open', self)        
         openAction.setShortcut('Ctrl+O')
         openAction.setStatusTip('Open movie')
@@ -286,8 +296,7 @@ class Main_win(QWidget):
         fileMenu.addAction(openAction)
         # fileMenu.addAction(exitAction)
         layout.setMenuBar(menuBar)
-
-    #----------------------FAC Spinners----------------#
+    #----------------------FAC Spinners----------------------------------------#
         for i in range(39):
             j = 2
             while(j <15):
@@ -296,18 +305,13 @@ class Main_win(QWidget):
                     spin = QSpinBox()
                     spin.setAlignment(Qt.AlignCenter)
                     spin.setRange(0,5)
-                    spin.resize(5,5)
+                    spin.setFixedWidth(50)
                     layout.addWidget(spin, j, k)
                     k += 2
                 j += 1
 
         Main_win.setLayout(self, layout)
 #------------------videoPlayerFunctions-----------------------#
-    def test1(self):
-        print(self.player.duration())
-    def test2(self):
-        print(self.fileName)
-
     def openFile(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie",
                 QDir.homePath())
@@ -316,22 +320,33 @@ class Main_win(QWidget):
             print(fileName)
             self.player.setMedia(
                     QMediaContent(QUrl.fromLocalFile(fileName)))
+            self.player.play()
             self.playButton.setEnabled(True)
-    def mediaStateChanged(self, state):
-        if self.player.state() == QMediaPlayer.PlayingState:
-            self.playButton.setIcon(
-                    self.style().standardIcon(QStyle.SP_MediaPause))
-        else:
-            self.playButton.setIcon(
-                    self.style().standardIcon(QStyle.SP_MediaPlay))
     def play(self):
         if self.player.state() == QMediaPlayer.PlayingState:
             self.player.pause()
         else:
             self.player.play()
-    def setPosition(self, position):
-        # print(position)
-        self.player.setPosition(position)
+    def on_positionChanged(self, pos):
+        self._end = 10 * 1000
+        if self.player.state() == QMediaPlayer.PlayingState:
+            if pos > self._end:
+                self.player.stop()
+    def on_positionChanged2(self, pos):
+        # if self.player.state() == QMediaPlayer.PlayingState:
+        pos -= self.frame_mvm
+        # print(pos)
+        self.setPosition2(pos)
+        self.player.pause()
+    def test1(self):
+        if self.player.state() == QMediaPlayer.PlayingState:
+            self.player.pause()
+        self.player.setPosition(self.player.position() - self.frame_mvm)
+         
+    def test2(self):
+        if self.player.state() == QMediaPlayer.PlayingState:
+            self.player.pause()
+        self.player.setPosition(self.player.position() + self.frame_mvm)
     def mediaStateChanged(self, state):
         if self.player.state() == QMediaPlayer.PlayingState:
             self.playButton.setIcon(
@@ -339,9 +354,33 @@ class Main_win(QWidget):
         else:
             self.playButton.setIcon(
                     self.style().standardIcon(QStyle.SP_MediaPlay))
-
+    def setPosition(self, position):
+        # print(position)
+        self.pos = position
+        self.player.setPosition(position)
+        
+    def setPosition2(self, position):
+        # print(position)
+        self.player.setPosition(position)
+        self.player.pause()
+        position += 1000
     def positionChanged(self, position):
         self.positionSlider.setValue(position)
+        s1 = s2 = 0
+        m1 = m2 = 0 
+        p_i_m = position // 1000
+        if(p_i_m < 60):
+            s1 = p_i_m % 10
+            p_i_m -= s1
+            s2 = p_i_m // 10
+        else:
+            m = p_i_m - ( p_i_m % 10)
+            m = m // 60
+            m1 = m % 10
+            m -= m1
+            m2 = m // 10
+
+        self.playtime.setText(str(m2)+str(m1)+":"+str(s2)+str(s1))
 
     def durationChanged(self, duration):
         self.positionSlider.setRange(0, duration)
